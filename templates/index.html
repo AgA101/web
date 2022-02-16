@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Главная страница | {{ super() }}
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-5">Категории</h1>
+<div class="row">
+    {% for course in courses %}
+    <div class="col-lg-4 col-md-6">
+        {% include 'course_card.html' %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
