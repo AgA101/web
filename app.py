@@ -1,8 +1,11 @@
 from flask import Flask, render_template, abort, request
 from markupsafe import escape
 from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+db = SQLAlchemy(app)
 
 
 courses = [
@@ -47,6 +50,24 @@ courses = [
         'end': datetime.now(),
     }
 ]
+
+
+class Course(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(80), nullable=False)
+    description = db.Column(db.TEXT, nullable=False)
+    cover = db.Column(db.TEXT)
+    is_new = db.Column(db.Boolean, default=False)
+    date_start = db.Column(db.DateTime)
+    date_end = db.Column(db.DateTime)
+    lessons = db.relationship('Lesson', backref='course')
+
+
+class Lesson(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(80), nullable=False)
+    content = db.Column(db.TEXT, nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
 
 
 @app.route('/')
