@@ -1,12 +1,17 @@
-from flask import Flask, render_template, abort, request
+from flask import Flask, render_template, abort, request,  redirect
 from markupsafe import escape
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf import FlaskForm
+from wtforms import StringField, TextAreaField, URLField, BooleanField, DateTimeLocalField
+from wtforms.validators import DataRequired, URL
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+app.config["SECRET_KEY"] = "dgihghthfi"
 db = SQLAlchemy(app)
-
+csrf = CSRFProtect(app)
 
 courses = [
     {
@@ -51,6 +56,13 @@ courses = [
     }
 ]
 
+class CreateCoursesForm(FlaskForm):
+    name = StringField(label="Название курса", validators=DateTimeLocalField())
+    description = TextAreaField(label="Описание", validators=DateTimeLocalField())
+    cover = URLField(label="Ссылка на курс")
+    is_new = BooleanField(label="Новый курс")
+    date_start = DateTimeLocalField(label="ghgh")
+    date_end = DateTimeLocalField(label="ghgh")
 
 class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -85,6 +97,23 @@ def search():
 @app.route('/about')
 def about():
     return 'All about me!'
+
+
+@app.route('/courses/create', methods=["GET", "POST"])
+def c_course():
+    create_course_form = CreateCoursesForm()
+    if request.method == "POST":
+        new_course = Course()
+        new_course.name = request.form.get("name")
+        new_course.description = request.form.get("description")
+        new_course.cover = request.form.get("cover")
+        new_course.is_new = request.form.get("is_new") is not None
+        new_course.date_start = datetime.fromisoformat(request.form.get('date_start'))
+        new_course.date_end =  datetime.fromisoformat(request.form.get('date_end'))
+        db.session.add(new_course)
+        db.session.commit()
+        return redirect('/')
+    return render_template('create_course.html')
 
 
 @app.route('/courses')

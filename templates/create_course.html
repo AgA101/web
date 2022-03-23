@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Новый курс
+{% endblock %}
+{% block content %}
+<h1>Новый курс</h1>
+<form action="{{ url_for('c_course') }}" method="POST">
+    {{form.csrf_token}}
+    <div>
+      <label for="name">Название курса</label>
+      <input type="text" id="name" name="name">
+    </div>
+    <div>
+        <label for="description">Описание</label>
+        <textarea id="description" cols="30" rows="10" name="description" required></textarea>
+    </div>
+    <div>
+        <label for="cover">Ссылка на обложку</label>
+        <input type="url" id="cover" name="cover" required>
+    </div>
+    <div>
+        <label for="is_new">
+            <input type="checkbox" id="is_new" name="is_new">
+            Новый курс
+        </label>
+    </div>
+    <div>
+        <label for="date_start">Дата начала</label>
+        <input type="datetime-local" id="date_start" name="date_start">
+    </div>
+    <div>
+        <label for="date_end">Дата окончания</label>
+        <input type="datetime-local" id="date_end" name="date_end">
+    </div>
+    <div>
+        <button type="submit">Добавить</button>
+    </div>
+</form>
+
+{% endblock %}
