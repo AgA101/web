@@ -3,15 +3,18 @@ from markupsafe import escape
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, URLField, BooleanField, DateTimeLocalField
-from wtforms.validators import DataRequired, URL
 from flask_wtf.csrf import CSRFProtect
+from wtforms import StringField, TextAreaField, URLField, BooleanField, DateTimeLocalField, EmailField, PasswordField
+from wtforms.validators import DataRequired, URL
+from flask_login import UserMixin, LoginManager, login_user, logout_user
+from flask_bcrypt import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
 app.config["SECRET_KEY"] = "dgihghthfi"
 db = SQLAlchemy(app)
 csrf = CSRFProtect(app)
+login_manager = LoginManager(app)
 
 courses = [
     {
@@ -56,13 +59,6 @@ courses = [
     }
 ]
 
-class CreateCoursesForm(FlaskForm):
-    name = StringField(label="Название курса", validators=DateTimeLocalField())
-    description = TextAreaField(label="Описание", validators=DateTimeLocalField())
-    cover = URLField(label="Ссылка на курс")
-    is_new = BooleanField(label="Новый курс")
-    date_start = DateTimeLocalField(label="ghgh")
-    date_end = DateTimeLocalField(label="ghgh")
 
 class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -82,9 +78,58 @@ class Lesson(db.Model):
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
 
 
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    email = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(60))
+    nickname = db.Column(db.String(32), unique=True)
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
+
+
+class CreateCoursesForm(FlaskForm):
+    name = StringField(label="Название курса", validators=[DataRequired()])
+    description = TextAreaField(label="Описание", validators=[DataRequired()])
+    cover = URLField(label="Ссылка на курс", validators=[DataRequired(), URL()])
+    is_new = BooleanField(label="Новый курс")
+    date_start = DateTimeLocalField(label="Дата начала")
+    date_end = DateTimeLocalField(label="Дата окончания")
+
+
+class LoginForm(FlaskForm):
+    email = EmailField(label="Электронная почта", validators=[DataRequired()])
+    password = PasswordField(label="Пароль" , validators=[DataRequired()])
+
+@login_manager.user_loader
+def user_loader(user_id):
+    return User.query.get(int(user_id))
+
 @app.route('/')
-def homepage():  # put application's code here
+def homepage():
     return render_template('index.html', courses=courses)
+
+
+@app.route('/login', methods=["GET", "POST"])
+def login():
+    login_form = LoginForm()
+    if login_form.validate_on_submit():
+        email = request.form.get("email")
+        password = request.form.get("password")
+        user = User.filter_by(email=email).first()
+        if user and user.password(password):
+            login_user(user)
+            return redirect("/")
+    return render_template('login.html', form=login_form)
+
+
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect('/')
 
 
 @app.route('/search')
@@ -99,26 +144,26 @@ def about():
     return 'All about me!'
 
 
+@app.route('/courses')
+def get_courses():
+    return 'All my courses'
+
+
 @app.route('/courses/create', methods=["GET", "POST"])
 def c_course():
     create_course_form = CreateCoursesForm()
-    if request.method == "POST":
+    if create_course_form.validate_on_submit():
         new_course = Course()
         new_course.name = request.form.get("name")
         new_course.description = request.form.get("description")
         new_course.cover = request.form.get("cover")
         new_course.is_new = request.form.get("is_new") is not None
         new_course.date_start = datetime.fromisoformat(request.form.get('date_start'))
-        new_course.date_end =  datetime.fromisoformat(request.form.get('date_end'))
+        new_course.date_end = datetime.fromisoformat(request.form.get('date_end'))
         db.session.add(new_course)
         db.session.commit()
         return redirect('/')
-    return render_template('create_course.html')
-
-
-@app.route('/courses')
-def get_courses():
-    return 'All my courses'
+    return render_template('create_course.html', form=create_course_form)
 
 
 @app.route('/courses/<int:course_id>')
@@ -148,4 +193,5 @@ def is_new(course):
 
 
 if __name__ == '__main__':
+    db.create_all()
     app.run()
