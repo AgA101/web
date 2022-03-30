@@ -101,7 +101,7 @@ class CreateCoursesForm(FlaskForm):
 
 class LoginForm(FlaskForm):
     email = EmailField(label="Электронная почта", validators=[DataRequired()])
-    password = PasswordField(label="Пароль" , validators=[DataRequired()])
+    password = PasswordField(label="Пароль", validators=[DataRequired()])
 
 
 @login_manager.user_loader
