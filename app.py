@@ -6,7 +6,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from wtforms import StringField, TextAreaField, URLField, BooleanField, DateTimeLocalField, EmailField, PasswordField
 from wtforms.validators import DataRequired, URL
-from flask_login import UserMixin, LoginManager, login_user, logout_user
+from flask_login import UserMixin, LoginManager, login_user, logout_user, login_required
 from flask_bcrypt import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -103,6 +103,7 @@ class LoginForm(FlaskForm):
     email = EmailField(label="Электронная почта", validators=[DataRequired()])
     password = PasswordField(label="Пароль" , validators=[DataRequired()])
 
+
 @login_manager.user_loader
 def user_loader(user_id):
     return User.query.get(int(user_id))
@@ -150,6 +151,7 @@ def get_courses():
 
 
 @app.route('/courses/create', methods=["GET", "POST"])
+@login_required
 def c_course():
     create_course_form = CreateCoursesForm()
     if create_course_form.validate_on_submit():
