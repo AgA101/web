@@ -7,7 +7,7 @@ from flask_wtf.csrf import CSRFProtect
 from wtforms import StringField, TextAreaField, URLField, BooleanField, DateTimeLocalField, EmailField, PasswordField
 from wtforms.validators import DataRequired, URL
 from flask_login import UserMixin, LoginManager, login_user, logout_user, login_required
-from flask_bcrypt import generate_password_hash, check_password_hash
+#from flask_bcrypt import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
@@ -83,6 +83,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(60))
     nickname = db.Column(db.String(32), unique=True)
+
     def set_password(self, password):
         self.password = generate_password_hash(password)
 
@@ -102,6 +103,7 @@ class CreateCoursesForm(FlaskForm):
 class LoginForm(FlaskForm):
     email = EmailField(label="Электронная почта", validators=[DataRequired()])
     password = PasswordField(label="Пароль", validators=[DataRequired()])
+    remember_me = BooleanField(label='Запомнить меня')
 
 
 @login_manager.user_loader
@@ -117,12 +119,13 @@ def homepage():
 def login():
     login_form = LoginForm()
     if login_form.validate_on_submit():
-        email = request.form.get("email")
-        password = request.form.get("password")
-        user = User.filter_by(email=email).first()
-        if user and user.password(password):
-            login_user(user)
-            return redirect("/")
+        email = request.form.get('email')
+        password = request.form.get('password')
+        remember_me = request.form.get('remember_me') is not None
+        user = User.query.filter_by(email=email).first()
+        if user and user.check_password(password):
+            login_user(user, remember=remember_me)
+            return redirect('/')
     return render_template('login.html', form=login_form)
 
 
@@ -138,11 +141,6 @@ def search():
     text = escape(request.args['text'])
     selected_courses = [course for course in courses if text in course['name'] or text in course['desc']]
     return render_template('search.html', text=text, courses=selected_courses)
-
-
-@app.route('/about')
-def about():
-    return 'All about me!'
 
 
 @app.route('/courses')
