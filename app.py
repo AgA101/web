@@ -8,11 +8,14 @@ from wtforms import StringField, TextAreaField, URLField, BooleanField, DateTime
 from wtforms.validators import DataRequired, URL
 from flask_login import UserMixin, LoginManager, login_user, logout_user, login_required
 from flask_bcrypt import generate_password_hash, check_password_hash
+from os import getenv
 
 app = Flask(__name__)
+
+db = SQLAlchemy(app)
+db.create_all()
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
 app.config["SECRET_KEY"] = "dgihghthfi"
-db = SQLAlchemy(app)
 csrf = CSRFProtect(app)
 login_manager = LoginManager(app)
 
@@ -68,6 +71,7 @@ class Course(db.Model):
     is_new = db.Column(db.Boolean, default=False)
     date_start = db.Column(db.DateTime)
     date_end = db.Column(db.DateTime)
+    #owner_id = db.Column(db.Integer, db.ForeignKey)
     lessons = db.relationship('Lesson', backref='course')
 
 
@@ -83,6 +87,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(60))
     nickname = db.Column(db.String(32), unique=True)
+    #courses = db.relationship("Course", backref="owner")
     def set_password(self, password):
         self.password = generate_password_hash(password)
 
@@ -102,6 +107,7 @@ class CreateCoursesForm(FlaskForm):
 class LoginForm(FlaskForm):
     email = EmailField(label="Электронная почта", validators=[DataRequired()])
     password = PasswordField(label="Пароль", validators=[DataRequired()])
+    remember_me = BooleanField(label='Запомнить меня')
 
 
 @login_manager.user_loader
@@ -110,6 +116,7 @@ def user_loader(user_id):
 
 @app.route('/')
 def homepage():
+    courses = Course.query.all()
     return render_template('index.html', courses=courses)
 
 
@@ -170,11 +177,11 @@ def c_course():
 
 @app.route('/courses/<int:course_id>')
 def get_course(course_id):
-    found_courses = [course for course in courses if course['id'] == course_id]
-    if not found_courses:
-        abort(404)
-
-    return render_template('course.html', course=found_courses[0])
+    #found_courses = [course for course in courses if course['id'] == course_id]
+    #if not found_courses:
+    #    abort(404)
+    courses = Course.query.all()
+    return render_template('course.html', course=courses)
 
 
 @app.errorhandler(404)
@@ -186,14 +193,14 @@ def handle_404(error):
 def datetime_format(value, format="%c"):
     return value.strftime(format)
 
-
+'''
 @app.template_test('new_course')
 def is_new(course):
     if 'is_new' not in course:
         return False
     return course['is_new']
-
+'''
 
 if __name__ == '__main__':
-    db.create_all()
+
     app.run()
