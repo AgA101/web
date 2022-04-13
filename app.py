@@ -144,6 +144,7 @@ def logout():
 @app.route('/search')
 def search():
     text = escape(request.args['text'])
+    courses = Course.query.all()
     selected_courses = [course for course in courses if text in course['name'] or text in course['desc']]
     return render_template('search.html', text=text, courses=selected_courses)
 

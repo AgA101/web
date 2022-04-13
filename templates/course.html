@@ -7,7 +7,7 @@
 {% block content %}
     <div class="row flex-lg-row-reverse align-items-center g-5 py-5">
         <div class="col-12 col-sm-6 col-lg-4">
-            <img src="{{ course.img }}" class="d-block mx-lg-auto img-fluid" style="width: 100%" alt="{{ course.name }}"
+            <img src="{{ course.cover }}" class="d-block mx-lg-auto img-fluid" style="width: 100%" alt="{{ course.name }}"
                  loading="lazy">
         </div>
         <div class="col-12 col-sm-6 col-lg-8">
@@ -15,7 +15,7 @@
             {% if course.is_new %}
                 <p class="display-6"><span class="badge bg-primary">Новое</span></p>
             {% endif %}
-            <p>{{ course.start | datetime }} - {{ course.end | datetime }}</p>
+            <p>{{ course.date_start | datetime }} - {{ course.date_end  | datetime }}</p>
             <p class="lead">{{ course.description }}</p>
 
             <div>
